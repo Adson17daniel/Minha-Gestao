@@ -1,98 +1,138 @@
-console.log("⚙️ app.js foi carregado com sucesso!");
-
-const lancamentos = JSON.parse(localStorage.getItem("lancamentos")) || [];
-
-function mostrarSecao(id) {
-  document.querySelectorAll("section").forEach(sec => sec.classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
-  document.getElementById("tela-inicial").classList.add("hidden");
-}
-
-// Menu toggle sidebar
+// DOM
 const btnMenu = document.getElementById("btn-menu");
 const sidebar = document.getElementById("sidebar");
+const secaoGastos = document.getElementById("gestao-gastos");
+const secaoLanc = document.getElementById("lancamentos");
+const telaInicial = document.getElementById("tela-inicial");
 
-btnMenu.addEventListener("click", () => {
-  sidebar.classList.toggle("-translate-x-full");
-});
+const form = document.getElementById("form-gastos");
+const listaReceitas = document.getElementById("lista-receitas");
+const listaDespesas = document.getElementById("lista-despesas");
+const saldoInicial = document.getElementById("saldo-inicial");
+const saldoAtual = document.getElementById("saldo-atual");
 
-// Navegação pelo menu
-document.querySelectorAll("[data-secao]").forEach(link => {
-  link.addEventListener("click", e => {
-    const secao = e.target.getAttribute("data-secao");
-    mostrarSecao(secao);
-    if (secao === "lancamentos") {
-      renderizarLancamentos();
-    }
-  });
-});
-
-// Botões voltar para tela inicial
-document.getElementById("btn-pagina-inicial-gastos").onclick = () => mostrarSecao("tela-inicial");
-document.getElementById("btn-pagina-inicial-lanc").onclick = () => mostrarSecao("tela-inicial");
-document.getElementById("btn-pagina-inicial-cargas").onclick = () => mostrarSecao("tela-inicial");
-document.getElementById("btn-pagina-inicial-horas").onclick = () => mostrarSecao("tela-inicial");
-
-// Formulário de gastos
-document.getElementById("form-gastos").addEventListener("submit", e => {
-  e.preventDefault();
-
-  const valor = parseFloat(document.getElementById("valor").value);
-  const tipo = document.querySelector("input[name='tipo']:checked").value;
-  const descricao = document.getElementById("descricao").value;
-  const data = document.getElementById("data").value;
-  const conta = document.querySelector("input[name='conta']:checked").value;
-
-  lancamentos.push({ valor, tipo, descricao, data, conta });
-  localStorage.setItem("lancamentos", JSON.stringify(lancamentos));
-  alert("Lançamento salvo!");
-  e.target.reset();
-});
-
-// Filtros de lançamentos
-const filtroMes = document.getElementById("filtro-mes");
 const filtroConta = document.getElementById("filtro-conta");
+const filtroMes = document.getElementById("filtro-mes");
 
-function renderizarLancamentos() {
-  const receitasEl = document.getElementById("lista-receitas");
-  const despesasEl = document.getElementById("lista-despesas");
-  receitasEl.innerHTML = "";
-  despesasEl.innerHTML = "";
+let lancamentos = JSON.parse(localStorage.getItem("lancamentos")) || [];
 
+// Navegação
+btnMenu.onclick = () => sidebar.classList.toggle("-translate-x-full");
+document.querySelectorAll("[data-secao]").forEach(link => {
+  link.onclick = () => {
+    telaInicial.classList.add("hidden");
+    secaoGastos.classList.add("hidden");
+    secaoLanc.classList.add("hidden");
+
+    const alvo = link.getAttribute("data-secao");
+    document.getElementById(alvo).classList.remove("hidden");
+    sidebar.classList.add("-translate-x-full");
+    if (alvo === "lancamentos") renderizarLancamentos();
+  };
+});
+
+// Saldo
+function atualizarSaldo() {
   let saldo = 0;
-
-  const mesSelecionado = filtroMes.value; // Ex: "2025-07"
-  const contaSelecionada = filtroConta.value;
-
   lancamentos.forEach(l => {
-    const data = new Date(l.data);
-    const dataMes = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
-    const condicaoMes = !mesSelecionado || dataMes === mesSelecionado;
-    const condicaoConta = contaSelecionada === "todos" || l.conta === contaSelecionada;
-
-    if (condicaoMes && condicaoConta) {
-      const div = document.createElement("div");
-      div.className = "p-4 bg-gray-100 rounded shadow";
-      div.innerHTML = `
-        <strong>${l.descricao}</strong><br>
-        Valor: R$ ${l.valor.toFixed(2)}<br>
-        Data: ${l.data}<br>
-        Conta: ${l.conta}
-      `;
-      if (l.tipo === "receita") {
-        receitasEl.appendChild(div);
-        saldo += l.valor;
-      } else {
-        despesasEl.appendChild(div);
-        saldo -= l.valor;
-      }
-    }
+    saldo += l.tipo === "receita" ? Number(l.valor) : -Number(l.valor);
   });
-
-  document.getElementById("saldo-atual").textContent = saldo.toFixed(2);
-  document.getElementById("saldo-inicial").textContent = saldo.toFixed(2);
+  saldoAtual.textContent = saldoInicial.textContent = saldo.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-// Atualiza lançamentos ao mudar filtros
-filtroMes.addEventListener("input", renderizarLancamentos);
-filtroConta.addEventListener("change", renderizarLancamentos);
+// Formulário
+form.onsubmit = (e) => {
+  e.preventDefault();
+  const id = document.getElementById("edit-id").value || Date.now().toString();
+  const valor = +document.getElementById("valor").value;
+  const descricao = document.getElementById("descricao").value;
+  const data = document.getElementById("data").value;
+  const tipo = document.querySelector("input[name='tipo']:checked")?.value;
+  const conta = document.querySelector("input[name='conta']:checked")?.value;
+
+  if (!valor || !descricao || !data || !tipo || !conta) {
+    alert("Preencha todos os campos!");
+    return;
+  }
+
+  const novo = { id, valor, descricao, data, tipo, conta };
+
+  // Edita ou adiciona
+  const idx = lancamentos.findIndex(l => l.id === id);
+  if (idx >= 0) lancamentos[idx] = novo;
+  else lancamentos.push(novo);
+
+  localStorage.setItem("lancamentos", JSON.stringify(lancamentos));
+  form.reset();
+  document.getElementById("edit-id").value = "";
+  telaInicial.classList.add("hidden");
+  secaoGastos.classList.add("hidden");
+  secaoLanc.classList.remove("hidden");
+  renderizarLancamentos();
+};
+
+// Renderizar
+function renderizarLancamentos() {
+  listaReceitas.innerHTML = "";
+  listaDespesas.innerHTML = "";
+
+  const contaFiltro = filtroConta.value;
+  const mesFiltro = filtroMes.value;
+
+  const filtrados = lancamentos.filter(l => {
+    const data = new Date(l.data);
+    const mes = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
+    const okConta = contaFiltro === "todos" || l.conta === contaFiltro;
+    const okMes = !mesFiltro || mes === mesFiltro;
+    return okConta && okMes;
+  });
+
+  filtrados.forEach(l => {
+    const div = document.createElement("div");
+    div.className = `p-3 rounded shadow text-sm flex justify-between items-center ${l.tipo === "receita" ? "bg-green-100" : "bg-red-100"}`;
+    div.innerHTML = `
+      <div>
+        <strong>${l.descricao}</strong><br>
+        <small>${new Date(l.data).toLocaleDateString()}</small><br>
+        <span>${l.conta} - R$ ${l.valor.toFixed(2)}</span>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="editarLancamento('${l.id}')" class="text-blue-600 font-bold">✏️</button>
+        <button onclick="excluirLancamento('${l.id}')" class="text-red-600 font-bold">🗑️</button>
+      </div>
+    `;
+    if (l.tipo === "receita") listaReceitas.appendChild(div);
+    else listaDespesas.appendChild(div);
+  });
+
+  atualizarSaldo();
+}
+
+window.editarLancamento = function (id) {
+  const l = lancamentos.find(x => x.id === id);
+  document.getElementById("edit-id").value = l.id;
+  document.getElementById("valor").value = l.valor;
+  document.getElementById("descricao").value = l.descricao;
+  document.getElementById("data").value = l.data;
+  document.querySelector(`input[name='tipo'][value='${l.tipo}']`).checked = true;
+  document.querySelector(`input[name='conta'][value='${l.conta}']`).checked = true;
+
+  telaInicial.classList.add("hidden");
+  secaoLanc.classList.add("hidden");
+  secaoGastos.classList.remove("hidden");
+};
+
+window.excluirLancamento = function (id) {
+  if (confirm("Deseja excluir este lançamento?")) {
+    lancamentos = lancamentos.filter(l => l.id !== id);
+    localStorage.setItem("lancamentos", JSON.stringify(lancamentos));
+    renderizarLancamentos();
+  }
+};
+
+// Filtros
+filtroConta.onchange = renderizarLancamentos;
+filtroMes.onchange = renderizarLancamentos;
+
+// Inicializa
+renderizarLancamentos();
