@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Minha Gestão</title>
-  <script defer src="./app.js"></script>
+  <title>Gestão de Gastos & Controle</title>
+  <script defer src="app.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -14,80 +14,213 @@
     }
   </style>
 </head>
-<body class="text-gray-900 p-4">
+<body class="min-h-screen p-4 relative text-gray-900">
 
-  <!-- Botão menu -->
-  <button id="btn-menu" class="fixed top-4 left-4 z-50 bg-red-700 text-white p-3 rounded shadow">
+  <!-- Botão para abrir a sidebar -->
+  <button id="btn-menu" class="fixed top-4 left-4 z-50 bg-red-700 text-white p-3 rounded-md shadow-lg hover:bg-red-800 focus:outline-none transition duration-300">
     ☰ Menu
   </button>
 
   <!-- Sidebar -->
-  <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-red-800 to-black text-white p-6 transform -translate-x-full transition duration-300 z-40">
-    <h2 class="text-2xl font-bold mb-6">Menu</h2>
-    <nav class="space-y-4">
-      <a href="#" data-secao="gestao-gastos">Gestão de Gastos</a>
-      <a href="#" data-secao="lancamentos">Lançamentos</a>
+  <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-red-800 to-black text-white p-6 transform -translate-x-full transition-transform duration-300 z-40 shadow-lg">
+    <h2 class="text-3xl font-extrabold mb-8 border-b border-red-600 pb-4">Menu</h2>
+    <nav class="flex flex-col space-y-6 text-lg font-semibold">
+      <a href="#" data-secao="gestao-gastos" class="hover:text-red-400 cursor-pointer transition">Gestão de Gastos</a>
+      <a href="#" data-secao="lancamentos" class="hover:text-red-400 cursor-pointer transition">Lançamentos</a>
+      <a href="#" data-secao="conferencia-cargas" class="hover:text-red-400 cursor-pointer transition">Conferência de Cargas</a>
+      <a href="#" data-secao="horas-extras" class="hover:text-red-400 cursor-pointer transition">Horas Extras</a>
     </nav>
   </div>
 
-  <!-- Tela inicial -->
-  <div id="tela-inicial" class="text-white text-center mt-24">
-    <h1 class="text-4xl font-extrabold">Saldo Atual:</h1>
-    <div id="saldo-inicial" class="text-6xl font-bold mt-4">R$ 0,00</div>
+  <!-- Tela Inicial -->
+  <div id="tela-inicial" class="flex flex-col items-center justify-center min-h-screen text-white select-none px-4">
+    <div class="text-center max-w-md">
+      <h1 class="text-6xl font-extrabold mb-6 drop-shadow-lg">Saldo Atual:</h1>
+      <div class="text-9xl font-black mt-2 leading-none" id="saldo-inicial">0.00</div>
+      <p class="text-lg opacity-90 mt-8">Clique no menu para começar</p>
+    </div>
   </div>
 
   <!-- Gestão de Gastos -->
-  <section id="gestao-gastos" class="hidden bg-white rounded p-6 max-w-xl mx-auto mt-12 shadow">
-    <h2 class="text-2xl font-bold mb-4">Novo Lançamento</h2>
-    <form id="form-gastos" class="space-y-4">
-      <input type="hidden" id="edit-id" />
+  <section id="gestao-gastos" class="hidden p-6 rounded-lg mb-8 max-w-xl mx-auto bg-white shadow-lg">
+    <button id="btn-pagina-inicial-gastos" class="mb-6 bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 shadow-md transition duration-300">
+      ← Página Inicial
+    </button>
+    <h2 class="text-3xl font-bold mb-6 border-b border-gray-300 pb-2 text-gray-800">Gestão de Gastos</h2>
+    <form id="form-gastos" class="space-y-6 text-gray-700">
 
-      <input type="number" id="valor" placeholder="Valor" class="w-full border p-3 rounded" required />
-      <input type="text" id="descricao" placeholder="Descrição" class="w-full border p-3 rounded" required />
-      <input type="date" id="data" class="w-full border p-3 rounded" required />
-
-      <div class="flex gap-4">
-        <label><input type="radio" name="tipo" value="receita" required /> Receita</label>
-        <label><input type="radio" name="tipo" value="despesa" /> Despesa</label>
+      <div>
+        <label for="valor" class="block font-semibold mb-2">Valor</label>
+        <input type="number" step="0.01" id="valor" class="border rounded-md p-3 w-full focus:ring-2 focus:ring-red-600" required />
       </div>
 
-      <div class="flex gap-4">
-        <label><input type="radio" name="conta" value="conta" required /> Conta</label>
-        <label><input type="radio" name="conta" value="nubank" /> Nubank</label>
-        <label><input type="radio" name="conta" value="hipercard" /> Hipercard</label>
+      <div>
+        <span class="font-semibold">Tipo</span><br />
+        <label class="inline-flex items-center mr-6 cursor-pointer">
+          <input type="radio" name="tipo" value="receita" required class="form-radio text-red-600" />
+          <span class="ml-2">Receita</span>
+        </label>
+        <label class="inline-flex items-center cursor-pointer">
+          <input type="radio" name="tipo" value="despesa" class="form-radio text-red-600" />
+          <span class="ml-2">Despesa</span>
+        </label>
       </div>
 
-      <button type="submit" class="w-full bg-red-700 text-white p-3 rounded font-bold hover:bg-red-800">Salvar</button>
+      <div id="check-fixo" class="hidden">
+        <label class="inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="fixo" class="form-checkbox text-red-600" />
+          <span id="fixo-label" class="ml-2"></span>
+        </label>
+      </div>
+
+      <div>
+        <label for="descricao" class="block font-semibold mb-2">Descrição</label>
+        <input type="text" id="descricao" class="border rounded-md p-3 w-full focus:ring-2 focus:ring-red-600" required />
+      </div>
+
+      <div>
+        <label for="data" class="block font-semibold mb-2">Data do lançamento</label>
+        <input type="date" id="data" class="border rounded-md p-3 w-full focus:ring-2 focus:ring-red-600" required />
+      </div>
+
+      <div>
+        <span class="font-semibold">Conta</span><br />
+        <label class="inline-flex items-center mr-6 cursor-pointer">
+          <input type="radio" name="conta" value="conta" required class="form-radio text-red-600" />
+          <span class="ml-2">Conta</span>
+        </label>
+        <label class="inline-flex items-center mr-6 cursor-pointer">
+          <input type="radio" name="conta" value="nubank" class="form-radio text-red-600" />
+          <span class="ml-2">Nubank</span>
+        </label>
+        <label class="inline-flex items-center cursor-pointer">
+          <input type="radio" name="conta" value="hipercard" class="form-radio text-red-600" />
+          <span class="ml-2">Hipercard</span>
+        </label>
+      </div>
+
+      <input type="hidden" id="edit-id" value="" />
+
+      <button type="submit" class="bg-red-700 text-white px-6 py-3 rounded-lg shadow-md hover:bg-red-800 transition duration-300 w-full font-semibold">
+        Salvar
+      </button>
     </form>
   </section>
 
   <!-- Lançamentos -->
-  <section id="lancamentos" class="hidden bg-white rounded p-6 max-w-6xl mx-auto mt-12 shadow">
-    <h2 class="text-2xl font-bold mb-4">Lançamentos</h2>
+  <section id="lancamentos" class="hidden p-6 rounded-lg mb-8 max-w-6xl mx-auto bg-white shadow-lg">
+    <button id="btn-pagina-inicial-lanc" class="mb-6 bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 shadow-md transition duration-300">
+      ← Página Inicial
+    </button>
+    <h2 class="text-3xl font-bold mb-6 border-b border-gray-300 pb-2 text-gray-800">Lançamentos</h2>
 
-    <div class="flex flex-col md:flex-row gap-4 mb-4">
-      <select id="filtro-conta" class="border p-2 rounded">
-        <option value="todos">Todas as contas</option>
-        <option value="conta">Conta</option>
-        <option value="nubank">Nubank</option>
-        <option value="hipercard">Hipercard</option>
-      </select>
+    <label for="filtro-conta" class="block mb-3 font-semibold text-gray-700">Filtrar por conta:</label>
+    <select id="filtro-conta" class="border p-3 rounded-md mb-4 w-full max-w-xs focus:ring-2 focus:ring-red-600">
+      <option value="todos">Todos</option>
+      <option value="conta">Conta</option>
+      <option value="nubank">Nubank</option>
+      <option value="hipercard">Hipercard</option>
+    </select>
 
-      <input type="month" id="filtro-mes" class="border p-2 rounded" />
+    <label for="filtro-mes" class="block mb-3 font-semibold text-gray-700">Filtrar por mês:</label>
+    <input type="month" id="filtro-mes" class="border p-3 rounded-md mb-6 w-full max-w-xs focus:ring-2 focus:ring-red-600">
+
+    <div class="mb-8 font-bold text-2xl text-gray-900">
+      Saldo Atual: R$ <span id="saldo-atual">0.00</span>
     </div>
 
-    <div class="text-xl font-bold mb-4">Saldo: <span id="saldo-atual">R$ 0,00</span></div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="lancamentos-lista">
       <div>
-        <h3 class="text-lg font-semibold mb-2">Receitas</h3>
-        <div id="lista-receitas" class="space-y-2"></div>
+        <h3 class="font-bold text-xl mb-4 border-b border-gray-300 pb-2 text-gray-800">Receitas</h3>
+        <div id="lista-receitas" class="space-y-4 min-h-[120px]"></div>
       </div>
       <div>
-        <h3 class="text-lg font-semibold mb-2">Despesas</h3>
-        <div id="lista-despesas" class="space-y-2"></div>
+        <h3 class="font-bold text-xl mb-4 border-b border-gray-300 pb-2 text-gray-800">Despesas</h3>
+        <div id="lista-despesas" class="space-y-4 min-h-[120px]"></div>
       </div>
     </div>
   </section>
+
+  <!-- Conferência de Cargas -->
+  <section id="conferencia-cargas" class="hidden p-6 rounded-lg mb-8 max-w-xl mx-auto bg-white shadow-lg">
+    <button id="btn-pagina-inicial-cargas" class="mb-6 bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 shadow-md transition duration-300">
+      ← Página Inicial
+    </button>
+    <h2 class="text-3xl font-bold mb-6 border-b border-gray-300 pb-2 text-gray-800">Conferência de Cargas</h2>
+    <form id="form-carga" class="space-y-6 text-gray-700">
+
+      <div>
+        <label for="base" class="block font-semibold mb-2">Base (m)</label>
+        <input type="number" step="0.01" id="base" class="border rounded-md p-3 w-full focus:ring-2 focus:ring-red-600" required />
+      </div>
+
+      <div>
+        <label for="altura" class="block font-semibold mb-2">Altura (m)</label>
+        <input type="number" step="0.01" id="altura" class="border rounded-md p-3 w-full focus:ring-2 focus:ring-red-600" required />
+      </div>
+
+      <div>
+        <label for="peso" class="block font-semibold mb-2">Peso unitário (kg)</label>
+        <input type="number" step="0.01" id="peso" class="border rounded-md p-3 w-full focus:ring-2 focus:ring-red-600" required />
+      </div>
+
+      <div>
+        <label for="quantidade" class="block font-semibold mb-2">Quantidade de Paletes/Volumes</label>
+        <input type="number" id="quantidade" class="border rounded-md p-3 w-full focus:ring-2 focus:ring-red-600" required />
+      </div>
+
+      <button type="button" id="add-palete" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 shadow-md transition duration-300 w-full font-semibold">
+        Adicionar Palete
+      </button>
+    </form>
+
+    <div class="mt-8 space-y-4 text-gray-900" id="lista-paletes"></div>
+
+    <div class="mt-6 font-bold text-lg text-gray-900">
+      Peso total da carga: <span id="peso-total">0.00</span> kg
+    </div>
+  </section>
+
+  <!-- Controle de Horas Extras -->
+  <section id="horas-extras" class="hidden p-6 rounded-lg max-w-xl mx-auto bg-white shadow-lg text-gray-700">
+    <button id="btn-pagina-inicial-horas" class="mb-6 bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 shadow-md transition duration-300">
+      ← Página Inicial
+    </button>
+    <h2 class="text-3xl font-bold mb-6 border-b border-gray-300 pb-2 text-gray-800">Controle de Horas Extras</h2>
+    <div class="space-y-6">
+
+      <div>
+        <label for="salario-base" class="block font-semibold mb-2">Salário Base (R$)</label>
+        <input type="number" step="0.01" id="salario-base" class="border rounded-md p-3 w-full focus:ring-2 focus:ring-red-600" />
+      </div>
+
+      <div>
+        <label for="adicional-extra" class="block font-semibold mb-2">Adicional (%)</label>
+        <input type="number" id="adicional-extra" min="0" max="100" step="10" class="border rounded-md p-3 w-full focus:ring-2 focus:ring-red-600" value="50" />
+      </div>
+
+      <div>
+        <label for="data-extra" class="block font-semibold mb-2">Data</label>
+        <input type="date" id="data-extra" class="border rounded-md p-3 w-full focus:ring-2 focus:ring-red-600" />
+      </div>
+
+      <div>
+        <label for="horas-extra" class="block font-semibold mb-2">Horas Extras</label>
+        <input type="number" step="0.1" min="0" id="horas-extra" class="border rounded-md p-3 w-full focus:ring-2 focus:ring-red-600" />
+      </div>
+
+      <div class="flex space-x-4">
+        <button id="add-dia-extra" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 shadow-md transition duration-300 flex-grow font-semibold">
+          Adicionar Dia
+        </button>
+        <button id="limpar-horas-extra" class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 shadow-md transition duration-300 flex-grow font-semibold">
+          Limpar Horas Extras
+        </button>
+      </div>
+
+      <div id="lista-horas" class="mt-4 max-h-56 overflow-y-auto space-y-3"></div>
+    </div>
+  </section>
+
 </body>
 </html>
