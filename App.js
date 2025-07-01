@@ -1,138 +1,95 @@
-// DOM
-const btnMenu = document.getElementById("btn-menu");
-const sidebar = document.getElementById("sidebar");
-const secaoGastos = document.getElementById("gestao-gastos");
-const secaoLanc = document.getElementById("lancamentos");
-const telaInicial = document.getElementById("tela-inicial");
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Minha Gestão</title>
+  <script defer src="./app.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #E10600, #000000);
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+  </style>
+</head>
+<body class="text-gray-900 p-4">
 
-const form = document.getElementById("form-gastos");
-const listaReceitas = document.getElementById("lista-receitas");
-const listaDespesas = document.getElementById("lista-despesas");
-const saldoInicial = document.getElementById("saldo-inicial");
-const saldoAtual = document.getElementById("saldo-atual");
+  <!-- Botão menu -->
+  <button id="btn-menu" class="fixed top-4 left-4 z-50 bg-red-700 text-white p-3 rounded shadow">
+    ☰ Menu
+  </button>
 
-const filtroConta = document.getElementById("filtro-conta");
-const filtroMes = document.getElementById("filtro-mes");
+  <!-- Sidebar -->
+  <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-red-800 to-black text-white p-6 transform -translate-x-full transition duration-300 z-40">
+    <h2 class="text-2xl font-bold mb-6">Menu</h2>
+    <nav class="space-y-4">
+      <a href="#" data-secao="gestao-gastos" class="hover:text-red-300 block">Gestão de Gastos</a>
+      <a href="#" data-secao="lancamentos" class="hover:text-red-300 block">Lançamentos</a>
+    </nav>
+  </div>
 
-let lancamentos = JSON.parse(localStorage.getItem("lancamentos")) || [];
+  <!-- Tela inicial -->
+  <div id="tela-inicial" class="text-white text-center mt-24">
+    <h1 class="text-4xl font-extrabold">Saldo Atual:</h1>
+    <div id="saldo-inicial" class="text-6xl font-bold mt-4">R$ 0,00</div>
+    <p class="mt-4 opacity-80">Use o menu para navegar</p>
+  </div>
 
-// Navegação
-btnMenu.onclick = () => sidebar.classList.toggle("-translate-x-full");
-document.querySelectorAll("[data-secao]").forEach(link => {
-  link.onclick = () => {
-    telaInicial.classList.add("hidden");
-    secaoGastos.classList.add("hidden");
-    secaoLanc.classList.add("hidden");
+  <!-- Gestão de Gastos -->
+  <section id="gestao-gastos" class="hidden bg-white rounded p-6 max-w-xl mx-auto mt-12 shadow">
+    <h2 class="text-2xl font-bold mb-4">Novo Lançamento</h2>
+    <form id="form-gastos" class="space-y-4">
+      <input type="hidden" id="edit-id" />
 
-    const alvo = link.getAttribute("data-secao");
-    document.getElementById(alvo).classList.remove("hidden");
-    sidebar.classList.add("-translate-x-full");
-    if (alvo === "lancamentos") renderizarLancamentos();
-  };
-});
+      <input type="number" id="valor" placeholder="Valor" class="w-full border p-3 rounded" required />
+      <input type="text" id="descricao" placeholder="Descrição" class="w-full border p-3 rounded" required />
+      <input type="date" id="data" class="w-full border p-3 rounded" required />
 
-// Saldo
-function atualizarSaldo() {
-  let saldo = 0;
-  lancamentos.forEach(l => {
-    saldo += l.tipo === "receita" ? Number(l.valor) : -Number(l.valor);
-  });
-  saldoAtual.textContent = saldoInicial.textContent = saldo.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+      <div class="flex gap-4">
+        <label><input type="radio" name="tipo" value="receita" required /> Receita</label>
+        <label><input type="radio" name="tipo" value="despesa" /> Despesa</label>
+      </div>
 
-// Formulário
-form.onsubmit = (e) => {
-  e.preventDefault();
-  const id = document.getElementById("edit-id").value || Date.now().toString();
-  const valor = +document.getElementById("valor").value;
-  const descricao = document.getElementById("descricao").value;
-  const data = document.getElementById("data").value;
-  const tipo = document.querySelector("input[name='tipo']:checked")?.value;
-  const conta = document.querySelector("input[name='conta']:checked")?.value;
+      <div class="flex gap-4">
+        <label><input type="radio" name="conta" value="conta" required /> Conta</label>
+        <label><input type="radio" name="conta" value="nubank" /> Nubank</label>
+        <label><input type="radio" name="conta" value="hipercard" /> Hipercard</label>
+      </div>
 
-  if (!valor || !descricao || !data || !tipo || !conta) {
-    alert("Preencha todos os campos!");
-    return;
-  }
+      <button type="submit" class="w-full bg-red-700 text-white p-3 rounded font-bold hover:bg-red-800">Salvar</button>
+    </form>
+  </section>
 
-  const novo = { id, valor, descricao, data, tipo, conta };
+  <!-- Lançamentos -->
+  <section id="lancamentos" class="hidden bg-white rounded p-6 max-w-6xl mx-auto mt-12 shadow">
+    <h2 class="text-2xl font-bold mb-4">Lançamentos</h2>
 
-  // Edita ou adiciona
-  const idx = lancamentos.findIndex(l => l.id === id);
-  if (idx >= 0) lancamentos[idx] = novo;
-  else lancamentos.push(novo);
+    <div class="flex flex-col md:flex-row gap-4 mb-4">
+      <select id="filtro-conta" class="border p-2 rounded">
+        <option value="todos">Todas as contas</option>
+        <option value="conta">Conta</option>
+        <option value="nubank">Nubank</option>
+        <option value="hipercard">Hipercard</option>
+      </select>
 
-  localStorage.setItem("lancamentos", JSON.stringify(lancamentos));
-  form.reset();
-  document.getElementById("edit-id").value = "";
-  telaInicial.classList.add("hidden");
-  secaoGastos.classList.add("hidden");
-  secaoLanc.classList.remove("hidden");
-  renderizarLancamentos();
-};
+      <input type="month" id="filtro-mes" class="border p-2 rounded" />
+    </div>
 
-// Renderizar
-function renderizarLancamentos() {
-  listaReceitas.innerHTML = "";
-  listaDespesas.innerHTML = "";
+    <div class="text-xl font-bold mb-4">Saldo: <span id="saldo-atual">R$ 0,00</span></div>
 
-  const contaFiltro = filtroConta.value;
-  const mesFiltro = filtroMes.value;
-
-  const filtrados = lancamentos.filter(l => {
-    const data = new Date(l.data);
-    const mes = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
-    const okConta = contaFiltro === "todos" || l.conta === contaFiltro;
-    const okMes = !mesFiltro || mes === mesFiltro;
-    return okConta && okMes;
-  });
-
-  filtrados.forEach(l => {
-    const div = document.createElement("div");
-    div.className = `p-3 rounded shadow text-sm flex justify-between items-center ${l.tipo === "receita" ? "bg-green-100" : "bg-red-100"}`;
-    div.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <strong>${l.descricao}</strong><br>
-        <small>${new Date(l.data).toLocaleDateString()}</small><br>
-        <span>${l.conta} - R$ ${l.valor.toFixed(2)}</span>
+        <h3 class="text-lg font-semibold mb-2">Receitas</h3>
+        <div id="lista-receitas" class="space-y-2"></div>
       </div>
-      <div class="flex gap-2">
-        <button onclick="editarLancamento('${l.id}')" class="text-blue-600 font-bold">✏️</button>
-        <button onclick="excluirLancamento('${l.id}')" class="text-red-600 font-bold">🗑️</button>
+      <div>
+        <h3 class="text-lg font-semibold mb-2">Despesas</h3>
+        <div id="lista-despesas" class="space-y-2"></div>
       </div>
-    `;
-    if (l.tipo === "receita") listaReceitas.appendChild(div);
-    else listaDespesas.appendChild(div);
-  });
+    </div>
+  </section>
 
-  atualizarSaldo();
-}
-
-window.editarLancamento = function (id) {
-  const l = lancamentos.find(x => x.id === id);
-  document.getElementById("edit-id").value = l.id;
-  document.getElementById("valor").value = l.valor;
-  document.getElementById("descricao").value = l.descricao;
-  document.getElementById("data").value = l.data;
-  document.querySelector(`input[name='tipo'][value='${l.tipo}']`).checked = true;
-  document.querySelector(`input[name='conta'][value='${l.conta}']`).checked = true;
-
-  telaInicial.classList.add("hidden");
-  secaoLanc.classList.add("hidden");
-  secaoGastos.classList.remove("hidden");
-};
-
-window.excluirLancamento = function (id) {
-  if (confirm("Deseja excluir este lançamento?")) {
-    lancamentos = lancamentos.filter(l => l.id !== id);
-    localStorage.setItem("lancamentos", JSON.stringify(lancamentos));
-    renderizarLancamentos();
-  }
-};
-
-// Filtros
-filtroConta.onchange = renderizarLancamentos;
-filtroMes.onchange = renderizarLancamentos;
-
-// Inicializa
-renderizarLancamentos();
+</body>
+</html>
